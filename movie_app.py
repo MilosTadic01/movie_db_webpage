@@ -61,8 +61,7 @@ class MovieApp:
     def _command_list_movies(self):
         """Print out entries in storage in a pretty format"""
         movies = self._storage.list_movies()
-        if not movies:
-            print("Empty data, no movies found.")
+        if Utility.is_db_empty(movies):
             return
         print(f"{len(movies)} movies in total:")
         for i, (k, v) in enumerate(movies.items()):
@@ -108,10 +107,9 @@ class MovieApp:
     def _command_movie_stats(self):
         """Print the avg && median rating, best && worst rated movies"""
         movies = self._storage.list_movies()
-        mov_count = len(movies)
-        if mov_count == 0:
-            print("Empty data, no movies found.")
+        if Utility.is_db_empty(movies):
             return
+        mov_count = len(movies)
         midpoint = mov_count // 2
         sorted_titles = sorted(movies, key=lambda movie:
                                (movies[movie]['rating'], movie), reverse=True)
@@ -135,9 +133,9 @@ class MovieApp:
     def _command_random_movie(self):
         """Print random movie"""
         movies = self._storage.list_movies()
-        db_len = len(movies)
-        if db_len == 0:
+        if Utility.is_db_empty(movies):
             return
+        db_len = len(movies)
         random_idx = random.randrange(0, db_len)
         for i, (k, v) in enumerate(movies.items()):
             if i == random_idx:
@@ -171,11 +169,15 @@ class MovieApp:
     def _command_movies_sorted_by_rating(self):
         """Reverse sort the movies in storage by rating and print them."""
         movies = self._storage.list_movies()
+        if Utility.is_db_empty(movies):
+            return
         self._print_after_sorting_by('rating', movies)
 
     def _command_movies_sorted_by_year(self):
         """Reverse sort the movies in storage by year and print them."""
         movies = self._storage.list_movies()
+        if Utility.is_db_empty(movies):
+            return
         self._print_after_sorting_by('year', movies)
 
     @staticmethod
@@ -194,8 +196,6 @@ class MovieApp:
                     value = FAKE_INT_MAX
             else:
                 value = d_type(temp)
-            print(value)
-            print(type(value))
             return value
         return value  # so it doesn't return None when just passing through
 
@@ -230,7 +230,7 @@ class MovieApp:
                 print(f"  <{k}> ({v['year']}), rating: {v['rating']}")
                 found_a_match = True
         if not found_a_match:
-            print("<None>")
+            print("  <None>")
 
     def _command_create_ratings_histogram(self):
         """Drop a file to subdir 'data' with a matplotlib-made histogram"""

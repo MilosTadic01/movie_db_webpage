@@ -12,6 +12,14 @@ class Utility:
         input("\n(Press enter to continue)")
 
     @staticmethod
+    def is_db_empty(movies):
+        """Return boolean. Inform user if empty."""
+        if not movies:
+            print("Empty database, no movies found.")
+            return True
+        return False
+
+    @staticmethod
     def get_user_num_choice(menu: str, menu_len: int):
         """Called in a while True loop. Ensures valid selection."""
         print(menu)
