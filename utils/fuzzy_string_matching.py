@@ -1,5 +1,6 @@
 """This implementation of fuzzy string matching is intended to catch typos
 And inform user 'did you mean...' and printout match candidate DB entries.
+
 Settings Instructions:
 If you want 'bbbbbbb' to suggest 'Titanic', ramp up ED_TOLERANCE_COEFF to
 1.1. Note that this will include any movies len(movies) < len(query) * 1.
@@ -16,10 +17,14 @@ tunnc   -> Did you mean Titanic? (not suggesting 'Aladdin')
 iabic   -> Did you mean Titanic? (not suggesting 'Aladdin')
 """
 
-ED_TOLERANCE_COEFFICIENT = 0.5
-LEN_TOLERANCE_COEFFICIENT = 1.4
+import string
+
+ED_TOLERANCE_COEFF = 0.50
+LEN_TOLERANCE_COEFF = 1.40
 START_IDX = 0
 CHUNK_SZ = 3
+RETAIN_ED = 0
+INCREASE_ED = 1
 
 
 def get_comparison_basis(query: str, movie: str):
@@ -27,16 +32,17 @@ def get_comparison_basis(query: str, movie: str):
     If none found, return the original string so that fuzzy matching will try,
     fail and say 'no such entry' in database. """
     for i in range(len(movie)):
-        if i + CHUNK_SZ > len(query) or i + CHUNK_SZ > len(movie[i:]):
+        if CHUNK_SZ > len(movie[i:]):  # reaching the upper bound of movie
             return movie  # bail
-        if two_out_of_three_are_present_and_ordered(query, movie[i:]):
+        if (two_out_of_three_are_present_and_ordered(query, movie[i:]) and
+                movie[i] not in string.whitespace):
             return movie[i:]  # return the slice fit for comparison
 
 
 def two_out_of_three_are_present_and_ordered(query: str, movie: str):
     """My recursion logic relies on 66% being present and in proper indexed
     order. Even Google doesn't recognize 'dgXfather' as 'godfather', I need
-    at least 'dgofather' :) """
+    at least 'Xgofather' :) """
     upper_bound = 1
     query = query.lower()
     movie = movie.lower()
@@ -85,12 +91,12 @@ def calc_ed(query: str, i: int, movie: str, j: int):
     query = query.lower()
     movie = movie.lower()
     if i == len(query) or j == len(movie):
-        return 0  # base case 1, idx would go out of bounds
+        return RETAIN_ED  # base case 1, idx would go out of bounds
     if query[i] == movie[j]:
         edits += calc_ed(query, i + 1, movie, j + 1)
     else:
         if i + 1 == len(query) or j + 1 == len(movie):
-            return 0  # base case 2, idx + 1 would go out of bounds
+            return INCREASE_ED  # base case 2, idx + 1 would go out of bounds
         elif query[i] == movie[j + 1]:  # insertion candidate
             edits += 1
             edits += calc_ed(query, i, movie, j + 1)
@@ -114,7 +120,7 @@ def get_fuzzy_srch_candidates(query: str, movies: dict):
         if is_unlikely_match_at_zero_idx(query, k):
             mov_str_cp = get_comparison_basis(query, k)
         editing_distance = calc_ed(query, START_IDX, mov_str_cp, START_IDX)
-        if (CHUNK_SZ < len(query) <= len(k) * LEN_TOLERANCE_COEFFICIENT and
-                editing_distance < len(query) * ED_TOLERANCE_COEFFICIENT):
+        if (CHUNK_SZ < len(query) <= len(mov_str_cp) * LEN_TOLERANCE_COEFF and
+                editing_distance < len(query) * ED_TOLERANCE_COEFF):
             candidates.append({k: v})
     return candidates

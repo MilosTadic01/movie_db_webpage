@@ -54,7 +54,7 @@ class StorageJson(IStorage):
         movies.pop(title)
         self._write_to_json(movies)
 
-    def update_movie(self, title):
+    def update_movie(self, title: str):
         """Updates a movie from the movie database with user-specified notes.
         Allows any input for 'notes', incl. empty string (default)."""
         movies = self.list_movies()
