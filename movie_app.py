@@ -158,6 +158,17 @@ class MovieApp:
             k, v = next(iter(mov.items()))
             print(f"  {i + 1}. <{k}> ({v['year']}), rating: {v['rating']}")
 
+    @staticmethod
+    def _print_after_sorting_by(criterion: str, movies: dict):
+        """Sorts movies according to 'criterion', then prints sorted.
+        An abstracted utility function for two similarly working functions."""
+        sorted_titles = sorted(
+            movies, key=lambda movie:
+            (movies[movie][criterion], movie), reverse=True
+        )
+        for mov in sorted_titles:
+            print(f"  <{mov}>: {movies[mov][criterion]}")
+
     def _command_movies_sorted_by_rating(self):
         """Reverse sort the movies in storage by rating and print them."""
         movies = self._storage.list_movies()
@@ -169,12 +180,17 @@ class MovieApp:
         self._print_after_sorting_by('year', movies)
 
     @staticmethod
-    def prompt_for_filter_value(value: (int, float), txt: str, d_type: type):
-        if (isinstance(value, int) and value < 0 or  # not set
-                isinstance(value, float) and value < 0.0):
+    def _init_flt_val(value: (int, float), txt: str, d_type: type):
+        """Initialize each filter value for cmd filter_movies.
+        Called inside 'while True' and a 'try:' block."""
+        if (isinstance(value, int) and value < 0 or
+                isinstance(value, float) and value < 0.0):  # not set
             temp = input(f"Enter {txt}: ")
             if temp == '':  # if irrelevant to user
-                value = 0.0
+                if type is float:
+                    value = 0.0
+                else:
+                    value = 0
             else:
                 value = d_type(temp)
             return value
@@ -186,48 +202,33 @@ class MovieApp:
         keeps going defensively. Input of '' voids the filter."""
         movies = self._storage.list_movies()
         found_a_match = False
-        min_rating = -1.0  # the value which signifies "not set yet"
-        start_year = -1
-        end_year = -1
+        min_rt = -1.0  # the value which signifies "not set yet"
+        start_yr = -1
+        end_yr = -1
         while True:
             try:
-                if isinstance(min_rating, float) and min_rating < 0:  # nt set
-                    temp = input("Enter minimum rating: ")
-                    if temp == '':  # if irrelevant to user
-                        min_rating = 0.0
-                        continue
-                    min_rating = float(temp)
-                if isinstance(min_rating, float) and min_rating < 0:  # bad
+                min_rt = self._init_flt_val(min_rt, 'minimum_rating', float)
+                if isinstance(min_rt, float) and min_rt < 0:  # bad
                     raise ValueError("Rating can't be negative")
-                if isinstance(start_year, int) and start_year < 0:  # not set
-                    temp = input("Enter start year: ")
-                    if temp == '':
-                        start_year = 0
-                        continue
-                    start_year = int(temp)
-                if isinstance(start_year, int) and start_year < 0:  # bad
-                    raise ValueError("Year can't be negative")
-                if isinstance(end_year, int) and end_year < 0:  # not set
-                    temp = input("Enter end year: ")
-                    if temp == '':
-                        end_year = FAKE_INT_MAX
-                        continue
-                    end_year = int(temp)
-                if isinstance(end_year, int) and end_year < 0:  # bad
-                    raise ValueError("Year can't be negative")
+                start_yr = self._init_flt_val(start_yr, 'start year', int)
+                if isinstance(start_yr, int) and start_yr < 0:  # bad
+                    raise ValueError("Start year can't be negative")
+                end_yr = self._init_flt_val(end_yr, 'end year', int)
+                if isinstance(end_yr, int) and end_yr < 0:  # bad
+                    raise ValueError("End year can't be negative")
                 break
             except ValueError as e:
                 print(f"Error: {e}")
         print("****The following movies match your filter criteria:")
         for k, v in movies.items():
-            if (v['rating'] >= min_rating and
-               start_year <= v['year'] <= end_year):
+            if (v['rating'] >= min_rt and
+               start_yr <= v['year'] <= end_yr):
                 print(f"  <{k}> ({v['year']}), rating: {v['rating']}")
                 found_a_match = True
         if not found_a_match:
             print("<None>")
 
-    def _create_ratings_histogram(self):
+    def _command_create_ratings_histogram(self):
         """Drop a file to subdir 'data' with a matplotlib-made histogram"""
         movies = self._storage.list_movies()
         ratings = list(rat.get('rating') for rat in movies.values())
@@ -246,8 +247,9 @@ class MovieApp:
         plt.savefig(filename)
         print(f"Histogram successfully created at {filename}")
 
-    def _generate_webpage(self):
-        """Use ./data/<file> to generate a webpage according to a template."""
+    def _command_generate_webpage(self):
+        """Use ./data/<file> to generate a webpage according to a template.
+        Concat the html list elements according to user sorting criteria."""
         movies = self._storage.list_movies()
         criteria = {
             0: 'unsorted',
@@ -271,12 +273,13 @@ class MovieApp:
             movies = {k: movies[k] for k in sorted(movies)}
         my_html_str = ''
         for k, v in movies.items():
-            img_el = (f'<a href="{GOOGLE_PREFIX}{k} {v['year']}" target="_blank">'
-                      f'<img class="movie-poster" src="{v['poster']}"/></a>')
-            if v['notes']:  # only include title= when there are Notes
-                img_el = (f'<a href="{GOOGLE_PREFIX}{k}" target="_blank">'
-                          f'<img class="movie-poster" src="{v['poster']}" '
-                          f'title="{v['notes']}"/></a>')
+            img_el = (f'<a href="{GOOGLE_PREFIX}{k} {v['year']}" '
+                      f'target="_blank"><img class="movie-poster" '
+                      f'src="{v['poster']}"/></a>')
+            if v['notes']:  # only include title= attr when there are Notes
+                img_el = (f'<a href="{GOOGLE_PREFIX}{k} {v['year']}" '
+                          f'target="_blank"><img class="movie-poster" '
+                          f'src="{v['poster']}" title="{v['notes']}"/></a>')
             my_html_str += (
                 f'<li><div class="movie">{img_el}<div class="movie-rating">'
                 f'{v['rating']}</div><div class="movie-title">'
@@ -295,19 +298,9 @@ class MovieApp:
             fd.write(updated_html)
         print("Website was generated successfully.")
 
-    @staticmethod
-    def _print_after_sorting_by(criterion: str, movies: dict):
-        """Sorts movies according to 'criterion', then prints sorted.
-        An abstracted utility function for two similarly working functions."""
-        sorted_titles = sorted(
-            movies, key=lambda movie:
-            (movies[movie][criterion], movie), reverse=True
-        )
-        for mov in sorted_titles:
-            print(f"  <{mov}>: {movies[mov][criterion]}")
-
     def _obtain_match_for_action(self, action: str):
-        """Offer match candidates choice to user and ensure exact match."""
+        """Offer match candidates choice to user and ensure exact match.
+        Used by commands delete_movie and update_movie."""
         # get query
         while True:
             query = input(f"{PROMPT_FOR_TITLE} {action}:\n> ").strip()
@@ -372,8 +365,8 @@ class MovieApp:
                      8: self._command_movies_sorted_by_rating,
                      9: self._command_movies_sorted_by_year,
                      10: self._command_filter_movies,
-                     11: self._create_ratings_histogram,
-                     12: self._generate_webpage
+                     11: self._command_create_ratings_histogram,
+                     12: self._command_generate_webpage
                      }
         menu_len = len(func_dict)
         print(WELCOME_HEADER)

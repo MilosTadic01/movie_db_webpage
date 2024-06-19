@@ -16,7 +16,8 @@ tunnc   -> Did you mean Titanic? (not suggesting 'Aladdin')
 iabic   -> Did you mean Titanic? (not suggesting 'Aladdin')
 """
 
-ED_TOLERANCE_COEFF = 0.5
+ED_TOLERANCE_COEFFICIENT = 0.5
+LEN_TOLERANCE_COEFFICIENT = 1.4
 START_IDX = 0
 CHUNK_SZ = 3
 
@@ -113,9 +114,7 @@ def get_fuzzy_srch_candidates(query: str, movies: dict):
         if is_unlikely_match_at_zero_idx(query, k):
             mov_str_cp = get_comparison_basis(query, k)
         editing_distance = calc_ed(query, START_IDX, mov_str_cp, START_IDX)
-        # print(f"Editing distance for {movie}: {editing_distance}")
-        # len_diff = abs(len(query) - len(movie))
-        if (editing_distance < len(query) * ED_TOLERANCE_COEFF and
-           len(query) > CHUNK_SZ):
+        if (CHUNK_SZ < len(query) <= len(k) * LEN_TOLERANCE_COEFFICIENT and
+                editing_distance < len(query) * ED_TOLERANCE_COEFFICIENT):
             candidates.append({k: v})
     return candidates
