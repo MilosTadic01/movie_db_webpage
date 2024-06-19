@@ -80,7 +80,6 @@ class MovieApp:
             return
         title, year, rating, poster = data
         self._storage.add_movie(title, year, rating, poster)
-        print(f"Movie {title} successfully added")
 
     def _command_delete_movie(self):
         """Remove entry from storage. To minimize the iterations of data
@@ -187,13 +186,18 @@ class MovieApp:
                 isinstance(value, float) and value < 0.0):  # not set
             temp = input(f"Enter {txt}: ")
             if temp == '':  # if irrelevant to user
-                if type is float:
+                if d_type is float:  # for rating
                     value = 0.0
-                else:
+                elif d_type is int:  # for start_yr
                     value = 0
+                if txt == 'end year':  # for end_yr
+                    value = FAKE_INT_MAX
             else:
                 value = d_type(temp)
+            print(value)
+            print(type(value))
             return value
+        return value  # so it doesn't return None when just passing through
 
     def _command_filter_movies(self):
         """Only print the movies which match the filter criteria.
@@ -343,9 +347,10 @@ class MovieApp:
         movies = self._storage.list_movies()
         # (a) partial && exact match scenarios
         for i, (k, v) in enumerate(movies.items()):
-            if (query.lower() in k.lower()
-                    and len(query) > len(k) * MATCH_COEFFICIENT):
-                candidates.append({k: v})
+            for word in k.lower().split():
+                if (query.lower() in word
+                        and len(query) > len(word) * MATCH_COEFFICIENT):
+                    candidates.append({k: v})
         # (b) fuzzy string matching worth a shot
         if not candidates:
             candidates = get_fuzzy_srch_candidates(query, movies)

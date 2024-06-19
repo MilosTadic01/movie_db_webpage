@@ -4,8 +4,8 @@ student track, which is quite a bit different from the phase 1 project on the
 advanced track, which I'm currently on, especially pertaining to bonuses. I've
 only done the bonuses after my core assignment was evaluated, so I'm including
 those bonuses in my current submission. The Fuzzy String Matching was fun and
-challenging, but I've limited its application to the search function
-(7. in the menu). The API seems to have its own fuzzy string matching, so I'm
+challenging, I've put it to work on delete_movie, update_movie and srch_movie.
+The API seems to have its own fuzzy string matching, so I'm
 just printing out the candidates that the API proposes when adding movies (2.)
 
 The OMDb API no longer seems to offer the posters to free accounts, so I had

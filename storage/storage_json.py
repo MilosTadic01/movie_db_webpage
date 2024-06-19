@@ -31,7 +31,8 @@ class StorageJson(IStorage):
     def add_movie(self, title: str, year: str, rating: float, poster: str):
         """Adds a movie to the movie database.
         Loads the information from the JSON file, adds the movie,
-        and saves it. The function doesn't validate input."""
+        and saves it. The function doesn't validate input. To avoid loading
+        DB in StorageApp, I had to have the 2 messages here"""
         movies = self.list_movies()
         if title in movies.keys():
             print(f"Movie {title} already exists!")
@@ -43,6 +44,7 @@ class StorageJson(IStorage):
                  }
         movies.update(movie)
         self._write_to_json(movies)
+        print(f"Movie {title} successfully added")
 
     def delete_movie(self, title: str):
         """Deletes a movie from the movie database. Loads the information from
